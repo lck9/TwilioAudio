@@ -5,7 +5,7 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
 
-import com.cloud9.doctor.R;
+import com.cloud9.nueces.R;
 
 import static android.content.Context.AUDIO_SERVICE;
 
