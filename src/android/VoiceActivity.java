@@ -25,7 +25,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Chronometer;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,12 +35,10 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.cloud9.doctor.BuildConfig;
-import com.cloud9.doctor.R;
+import com.cloud9.nueces.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.koushikdutta.ion.Ion;
 import com.twilio.audioswitch.AudioDevice;
 import com.twilio.audioswitch.AudioSwitch;
 import com.twilio.voice.Call;
@@ -55,16 +52,19 @@ import com.twilio.voice.Voice;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
+import io.reactivex.SingleObserver;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 import kotlin.Unit;
 
 public class VoiceActivity extends AppCompatActivity {
-
     private static final String TAG = "VoiceActivity";
-    private static final String identity = "bob";
+    private static final String identity = "cloud9";
     /*
      * You must provide the URL to the publicly accessible Twilio access token server route
      *
@@ -74,7 +74,17 @@ public class VoiceActivity extends AppCompatActivity {
      *
      * For example : https://myurl.io/accessToken.php
      */
-    private static final String TWILIO_ACCESS_TOKEN_SERVER_URL = "http://15.206.180.163:8080/api/twilio-voice/accessToken";
+
+    // For Dev Server// c9dev
+    //private static String TWILIO_ACCESS_TOKEN_SERVER_URL;
+    // For MultiDev server//
+//    private static final String TWILIO_ACCESS_TOKEN_SERVER_URL = "https://c9dev2.cloud9download.com:8080/api/twilio-voice/accessToken";
+
+    private static final String TWILIO_ACCESS_TOKEN_SERVER_URL = "https://uat.cloud9download.com:8080/api/twilio-voice/accessToken";
+    //    For Staging//
+    // private static final String TWILIO_ACCESS_TOKEN_SERVER_URL = "https://staging.cloud9download.com:8080/api/twilio-voice/accessToken";
+    //For Pre-Prod//
+    //  private static final String TWILIO_ACCESS_TOKEN_SERVER_URL = "https://preprod.cloud9download.com:8080/api/twilio-voice/accessToken";
 
     private static final int MIC_PERMISSION_REQUEST_CODE = 1;
 
@@ -108,11 +118,21 @@ public class VoiceActivity extends AppCompatActivity {
 
     RegistrationListener registrationListener = registrationListener();
     Call.Listener callListener = callListener();
+    Bundle bundle;
+    String toNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_voice);
+
+
+        bundle = getIntent().getExtras();
+        if (bundle != null) {
+            toNumber = bundle.getString("number");
+            //TWILIO_ACCESS_TOKEN_SERVER_URL = bundle.getString("accestokenURL");
+        }
+
 
         // These flags ensure that the activity can be launched when the screen is locked.
         Window window = getWindow();
@@ -167,6 +187,16 @@ public class VoiceActivity extends AppCompatActivity {
         } else {
             retrieveAccessToken();
         }
+        //Toast.makeText(this, ""+toNumber, Toast.LENGTH_SHORT).show();
+        /*retrieveAccessToken();
+        params.put("to", toNumber);
+        ConnectOptions connectOptions = new ConnectOptions.Builder(accessToken)
+                .params(params)
+                .build();
+        activeCall = Voice.connect(VoiceActivity.this, connectOptions, callListener);
+        setCallUI();*/
+
+
     }
 
     @Override
@@ -222,17 +252,17 @@ public class VoiceActivity extends AppCompatActivity {
                  * can use the `SoundPoolManager` to play custom audio files between the
                  * `Call.Listener.onRinging()` and the `Call.Listener.onConnected()` callbacks.
                  */
-                if (BuildConfig.playCustomRingback) {
-                    SoundPoolManager.getInstance(VoiceActivity.this).playRinging();
-                }
+
+                SoundPoolManager.getInstance(VoiceActivity.this).playRinging();
+
             }
 
             @Override
             public void onConnectFailure(@NonNull Call call, @NonNull CallException error) {
                 audioSwitch.deactivate();
-                if (BuildConfig.playCustomRingback) {
-                    SoundPoolManager.getInstance(VoiceActivity.this).stopRinging();
-                }
+
+                SoundPoolManager.getInstance(VoiceActivity.this).stopRinging();
+
                 Log.d(TAG, "Connect failure");
                 String message = String.format(
                         Locale.US,
@@ -247,9 +277,9 @@ public class VoiceActivity extends AppCompatActivity {
             @Override
             public void onConnected(@NonNull Call call) {
                 audioSwitch.activate();
-                if (BuildConfig.playCustomRingback) {
-                    SoundPoolManager.getInstance(VoiceActivity.this).stopRinging();
-                }
+
+                SoundPoolManager.getInstance(VoiceActivity.this).stopRinging();
+
                 Log.d(TAG, "Connected");
                 activeCall = call;
             }
@@ -267,9 +297,9 @@ public class VoiceActivity extends AppCompatActivity {
             @Override
             public void onDisconnected(@NonNull Call call, CallException error) {
                 audioSwitch.deactivate();
-                if (BuildConfig.playCustomRingback) {
-                    SoundPoolManager.getInstance(VoiceActivity.this).stopRinging();
-                }
+
+                SoundPoolManager.getInstance(VoiceActivity.this).stopRinging();
+
                 Log.d(TAG, "Disconnected");
                 if (error != null) {
                     String message = String.format(
@@ -281,7 +311,9 @@ public class VoiceActivity extends AppCompatActivity {
                     Snackbar.make(coordinatorLayout, message, Snackbar.LENGTH_LONG).show();
                 }
                 resetUI();
+                finish();
             }
+
             /*
              * currentWarnings: existing quality warnings that have not been cleared yet
              * previousWarnings: last set of warnings prior to receiving this callback
@@ -308,7 +340,7 @@ public class VoiceActivity extends AppCompatActivity {
                         Locale.US,
                         "Newly raised warnings: " + currentWarnings + " Clear warnings " + previousWarnings);
                 Log.e(TAG, message);
-                Snackbar.make(coordinatorLayout, message, Snackbar.LENGTH_LONG).show();
+                //  Snackbar.make(coordinatorLayout, message, Snackbar.LENGTH_LONG).show();
             }
         };
     }
@@ -330,7 +362,8 @@ public class VoiceActivity extends AppCompatActivity {
      * Reset UI elements
      */
     private void resetUI() {
-        callActionFab.show();
+        callActionFab.hide();
+        //callActionFab.show();
         muteActionFab.setImageDrawable(ContextCompat.getDrawable(VoiceActivity.this, R.drawable.ic_mic_white_24dp));
         holdActionFab.hide();
         holdActionFab.setBackgroundTintList(ColorStateList
@@ -521,6 +554,7 @@ public class VoiceActivity extends AppCompatActivity {
             SoundPoolManager.getInstance(VoiceActivity.this).playDisconnect();
             resetUI();
             disconnect();
+            finish();
 
         };
     }
@@ -549,6 +583,15 @@ public class VoiceActivity extends AppCompatActivity {
     /*
      * Disconnect from Call
      */
+
+    @Override
+    public void onBackPressed() {
+//        super.onBackPressed();
+//        disconnect();
+//        finish();
+
+    }
+
     private void disconnect() {
         if (activeCall != null) {
             activeCall.disconnect();
@@ -605,6 +648,7 @@ public class VoiceActivity extends AppCompatActivity {
         /*
          * Check if microphone permissions is granted
          */
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == MIC_PERMISSION_REQUEST_CODE && permissions.length > 0) {
             if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 Snackbar.make(coordinatorLayout,
@@ -692,8 +736,8 @@ public class VoiceActivity extends AppCompatActivity {
     }
 
     private static AlertDialog createCallDialog(final DialogInterface.OnClickListener callClickListener,
-                                               final DialogInterface.OnClickListener cancelClickListener,
-                                               final Activity activity) {
+                                                final DialogInterface.OnClickListener cancelClickListener,
+                                                final Activity activity) {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(activity);
 
         alertDialogBuilder.setIcon(R.drawable.ic_call_black_24dp);
@@ -738,19 +782,63 @@ public class VoiceActivity extends AppCompatActivity {
      * Get an access token from your Twilio access token server
      */
     private void retrieveAccessToken() {
-        Ion.with(this).load(TWILIO_ACCESS_TOKEN_SERVER_URL + "?identity=" + identity)
-                .asString()
-                .setCallback((e, accessToken) -> {
-                    if (e == null) {
-                        Log.d(TAG, " Video Access token: " + accessToken);
-                        VoiceActivity.this.accessToken = accessToken;
-                        Toast.makeText(this, ""+accessToken, Toast.LENGTH_SHORT).show();
-                        registerForCallInvites();
-                    } else {
-                        Snackbar.make(coordinatorLayout,
-                                "Error retrieving access token. Unable to make calls",
-                                Snackbar.LENGTH_LONG).show();
-                    }
-                });
+        RetrofitAPi.getRetrofitService().create(ApiService.class)
+                .getData(identity)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleObserver<String>() {
+            @Override
+            public void onSubscribe(@io.reactivex.annotations.NonNull Disposable d) {
+
+            }
+
+            @Override
+            public void onSuccess(@io.reactivex.annotations.NonNull String s) {
+                if (s != null) {
+                    accessToken = s;
+                    Log.d(TAG, " Video Access token: " + accessToken);
+                    VoiceActivity.this.accessToken = accessToken;
+                    // Toast.makeText(this, ""+accessToken, Toast.LENGTH_SHORT).show();
+                    params.put("to", toNumber);
+                    ConnectOptions connectOptions = new ConnectOptions.Builder(accessToken)
+                            .params(params)
+                            .build();
+                    activeCall = Voice.connect(VoiceActivity.this, connectOptions, callListener);
+                    setCallUI();
+
+                    registerForCallInvites();
+                } else {
+                    Snackbar.make(coordinatorLayout,
+                            "Error retrieving access token. Unable to make calls",
+                            Snackbar.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onError(@io.reactivex.annotations.NonNull Throwable e) {
+                Log.e("error", e.getMessage());
+            }
+        });
+//        Ion.with(this).load(TWILIO_ACCESS_TOKEN_SERVER_URL + "?identity=" + identity)
+//                .asString()
+//                .setCallback((e, accessToken) -> {
+//                    if (e == null) {
+//                        Log.d(TAG, " Video Access token: " + accessToken);
+//                        VoiceActivity.this.accessToken = accessToken;
+//                        // Toast.makeText(this, ""+accessToken, Toast.LENGTH_SHORT).show();
+//                        params.put("to", toNumber);
+//                        ConnectOptions connectOptions = new ConnectOptions.Builder(accessToken)
+//                                .params(params)
+//                                .build();
+//                        activeCall = Voice.connect(VoiceActivity.this, connectOptions, callListener);
+//                        setCallUI();
+//
+//                        registerForCallInvites();
+//                    } else {
+//                        Snackbar.make(coordinatorLayout,
+//                                "Error retrieving access token. Unable to make calls",
+//                                Snackbar.LENGTH_LONG).show();
+//                    }
+//                });
     }
 }
