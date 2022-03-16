@@ -5,4 +5,5 @@
     <string name="answer">Answer</string>
     <string name="decline">Decline</string>
     <string name="callHint">Dial a client name or phone number. Leaving the field empty results in an automated response.</string>
+    <string name="audio_device">Audio Device</string>
 </resources>
