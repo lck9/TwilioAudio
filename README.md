@@ -14,3 +14,6 @@ Add these dependecies in build.gradle(module:app)
     implementation "com.squareup.okhttp3:okhttp:3.12.0"
     implementation 'com.twilio:audioswitch:1.0.0'
     implementation 'com.twilio:voice-android:5.5.0'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
+  implementation 'com.google.android.material:material:1.4.0'
+  implementation "com.google.firebase:firebase-messaging:19.0.0"
