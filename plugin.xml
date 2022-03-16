@@ -21,7 +21,6 @@
       <source-file src="src/android/TwilioAudio.java" target-dir="src/com/medleymed/TwilioAudio" />
       <source-file src="src/android/ApiService.java" target-dir="src/com/medleymed/TwilioAudio" />
        <source-file src="src/android/RetrofitAPi.java" target-dir="src/com/medleymed/TwilioAudio" />
-       <source-file src="src/android/ApiService.java" target-dir="src/com/medleymed/TwilioAudio" />
       <source-file src="src/android/VoiceActivity.java" target-dir="src/com/medleymed/TwilioAudio" />
       <source-file src="src/android/IncomingCallNotificationService.java" target-dir="src/com/medleymed/TwilioAudio" />
       <source-file src="src/android/SoundPoolManager.java" target-dir="src/com/medleymed/TwilioAudio" />
