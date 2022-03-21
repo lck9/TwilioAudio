@@ -6,16 +6,25 @@
 //
 
 #import "ViewController.h"
-
+#import "AppCenterAnalyticsPlugin.h"
 @import AVFoundation;
 @import PushKit;
 @import CallKit;
 @import TwilioVoice;
 
-static NSString *const kYourServerBaseURLString = @"http://15.206.180.163:8080/api/twilio-voice";
+
+//static NSString *const kYourServerBaseURLString = @"https://c9dev2.cloud9download.com:8080/api/twilio-voice";
+//static NSString *const kYourServerBaseURLString = @"https://uat.cloud9download.com:8080/api/twilio-voice";
+//static NSString *const kYourServerBaseURLString = @"https://c9demo.cloud9download.com:8080/api/twilio-voice";
+//    static NSString *const kYourServerBaseURLString = @"https://alaska.cloud9download.com:8080/api/twilio-voice";
+
+static NSString *const kYourServerBaseURLString = @"https://mhid.cloud9download.com:8080/api/twilio-voice";
+
+
+
 // If your token server is written in PHP, kAccessTokenEndpoint needs .php extension at the end. For example : /accessToken.php
 static NSString *const kAccessTokenEndpoint = @"/accessToken";
-static NSString *const kIdentity = @"alice";
+static NSString *const kIdentity = @"Cloud9";
 static NSString *const kTwimlParamTo = @"to";
 
 @interface ViewController () <PKPushRegistryDelegate, TVONotificationDelegate, TVOCallDelegate, CXProviderDelegate, UITextFieldDelegate, AVAudioPlayerDelegate>
@@ -61,7 +70,9 @@ static NSString *const kTwimlParamTo = @"to";
 
     [self toggleUIState:YES showCallControl:NO];
     self.outgoingValue.delegate = self;
-    self.outgoingValue.text = self.ToNumber;
+    NSString *savedValue = [[NSUserDefaults standardUserDefaults]
+        stringForKey:@"AudioCallNumber"];
+    self.outgoingValue.text = savedValue;
     [self configureCallKit];
     
     /*
@@ -116,6 +127,7 @@ static NSString *const kTwimlParamTo = @"to";
     NSString *accessToken = [NSString stringWithContentsOfURL:[NSURL URLWithString:accessTokenURLString]
                                                      encoding:NSUTF8StringEncoding
                                                         error:nil];
+    
     return accessToken;
 }
 
@@ -693,7 +705,7 @@ withCompletionHandler:(void (^)(void))completion {
     __weak __typeof__(self) weakSelf = self;
     TVOConnectOptions *connectOptions = [TVOConnectOptions optionsWithAccessToken:[self fetchAccessToken] block:^(TVOConnectOptionsBuilder *builder) {
         __strong __typeof__(self) strongSelf = weakSelf;
-        builder.params = @{kTwimlParamTo: strongSelf.outgoingValue.text};
+        builder.params = @{kTwimlParamTo:self.outgoingValue.text};
         builder.uuid = uuid;
     }];
     TVOCall *call = [TwilioVoice connectWithOptions:connectOptions delegate:self];
