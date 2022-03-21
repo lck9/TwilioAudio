@@ -17,6 +17,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+      <activity android:name="com.medleymed.TwilioAudio.VoiceActivity"></activity>
         <uses-permission android:name="android.permission.INTERNET" />
       <source-file src="src/android/TwilioAudio.java" target-dir="src/com/medleymed/TwilioAudio" />
       <source-file src="src/android/ApiService.java" target-dir="src/com/medleymed/TwilioAudio" />
