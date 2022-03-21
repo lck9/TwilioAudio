@@ -806,7 +806,7 @@ public class VoiceActivity extends AppCompatActivity {
                     activeCall = Voice.connect(VoiceActivity.this, connectOptions, callListener);
                     setCallUI();
 
-                    registerForCallInvites();
+//                     registerForCallInvites();
                 } else {
                     Snackbar.make(coordinatorLayout,
                             "Error retrieving access token. Unable to make calls",
