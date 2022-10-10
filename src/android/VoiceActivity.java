@@ -35,7 +35,7 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.cloud9.nueces.R;
+import com.cloud9.telehealth.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -120,6 +120,8 @@ public class VoiceActivity extends AppCompatActivity {
     Call.Listener callListener = callListener();
     Bundle bundle;
     String toNumber;
+
+    ApiService apiService = RetrofitAPi.getRetrofitService().create(ApiService.class);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -391,6 +393,8 @@ public class VoiceActivity extends AppCompatActivity {
         /*
          * Tear down audio device management and restore previous volume stream
          */
+        Intent intent = new Intent("disconnectedAudioCall");
+        LocalBroadcastManager.getInstance(this).sendBroadcastSync(intent);
         audioSwitch.stop();
         setVolumeControlStream(savedVolumeControlStream);
         SoundPoolManager.getInstance(this).release();
@@ -555,7 +559,6 @@ public class VoiceActivity extends AppCompatActivity {
             resetUI();
             disconnect();
             finish();
-
         };
     }
 
@@ -782,8 +785,7 @@ public class VoiceActivity extends AppCompatActivity {
      * Get an access token from your Twilio access token server
      */
     private void retrieveAccessToken() {
-        RetrofitAPi.getRetrofitService().create(ApiService.class)
-                .getData(identity)
+        apiService.getData(identity)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new SingleObserver<String>() {
@@ -806,7 +808,7 @@ public class VoiceActivity extends AppCompatActivity {
                     activeCall = Voice.connect(VoiceActivity.this, connectOptions, callListener);
                     setCallUI();
 
-//                     registerForCallInvites();
+                    registerForCallInvites();
                 } else {
                     Snackbar.make(coordinatorLayout,
                             "Error retrieving access token. Unable to make calls",
